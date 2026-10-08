@@ -1,0 +1,1568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1923">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ranked">
+<title>Ranked</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Oswald:wght@500;600&display=swap">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0f1923;
+  --surface: #16212c;
+  --surface-2: #1d2a36;
+  --sunk: #0b131b;
+  --line: #283846;
+  --line-2: #3a4e60;
+  --ink: #ece8e1;
+  --ink-2: #b5bcc2;
+  --muted: #8a95a0;
+  --accent: #ff4655;
+  --accent-soft: rgba(255, 70, 85, .14);
+  --win: #2fd3a5;
+  --win-soft: rgba(47, 211, 165, .14);
+  --loss: #ff4655;
+  --loss-soft: rgba(255, 70, 85, .14);
+  --empty: #243341;
+  --display: "Oswald", "Arial Narrow", system-ui, sans-serif;
+  --body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cut: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(120% 60% at 50% -10%, rgba(255, 70, 85, .16), transparent 60%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.018) 0 2px, transparent 2px 14px);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.disp { font-family: var(--display); text-transform: uppercase; letter-spacing: .08em; }
+
+#app { max-width: 520px; margin: 0 auto; padding: var(--safe-t) 16px calc(92px + var(--safe-b)); }
+body.onboarding #app { padding-bottom: calc(32px + var(--safe-b)); }
+body.onboarding .top, body.onboarding nav.tabs { display: none; }
+
+/* Top bar */
+.top {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 0 10px; margin: 0 -16px; padding-left: 16px; padding-right: 16px;
+  background: linear-gradient(var(--bg) 75%, rgba(15,25,35,0));
+}
+.top .who { flex: 1; min-width: 0; }
+.top .who b { font-family: var(--display); font-size: 17px; letter-spacing: .04em; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top .who b span { color: var(--muted); font-weight: 500; }
+.top .who small { color: var(--accent); font-family: var(--display); text-transform: uppercase; letter-spacing: .12em; font-size: 11px; }
+.top .streak { font-family: var(--display); font-size: 18px; display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: var(--surface); border: 1px solid var(--line); }
+
+/* Tabs */
+nav.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+  background: rgba(11, 19, 27, .94);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line);
+  padding-bottom: var(--safe-b);
+}
+nav.tabs .in { display: flex; max-width: 520px; margin: 0 auto; }
+nav.tabs button {
+  flex: 1; background: none; border: 0; position: relative;
+  padding: 10px 0 9px; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 11px; color: var(--muted);
+}
+nav.tabs button svg { width: 22px; height: 22px; }
+nav.tabs button[aria-current="page"] { color: var(--ink); }
+nav.tabs button[aria-current="page"]::before { content: ""; position: absolute; top: -1px; left: 30%; right: 30%; height: 2px; background: var(--accent); }
+
+/* Generic */
+.card {
+  background: var(--surface); border: 1px solid var(--line);
+  padding: 16px; margin: 14px 0; position: relative;
+}
+.card::after { content: ""; position: absolute; top: -1px; left: -1px; width: 14px; height: 2px; background: var(--accent); }
+.h {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  font-family: var(--display); text-transform: uppercase; letter-spacing: .12em;
+  font-size: 13px; color: var(--muted); margin: 0 0 12px;
+}
+.h b { color: var(--ink); font-weight: 600; }
+.btn {
+  display: block; width: 100%; border: 0; padding: 15px 18px;
+  background: var(--accent); color: #fff;
+  font-family: var(--display); text-transform: uppercase; letter-spacing: .14em; font-size: 18px; font-weight: 600;
+  clip-path: var(--cut); transition: filter .15s, transform .1s;
+}
+.btn:active:not(:disabled) { transform: scale(.98); }
+.btn:disabled { background: var(--line-2); color: var(--muted); }
+.btn.ghost { background: transparent; border: 1px solid var(--line-2); color: var(--ink); clip-path: none; font-size: 15px; padding: 12px; }
+.btn.sm { font-size: 14px; padding: 10px 14px; width: auto; display: inline-block; }
+.btn.danger { background: transparent; border: 1px solid var(--loss); color: var(--loss); clip-path: none; font-size: 15px; padding: 12px; }
+.row { display: flex; gap: 10px; align-items: center; }
+.row > * { flex: 1; }
+.stack > * + * { margin-top: 10px; }
+.linkbtn { background: none; border: 0; color: var(--accent); font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 13px; padding: 4px 0; }
+
+/* Hero */
+.hero { text-align: center; padding: 8px 0 4px; }
+.hero .emb { display: block; margin: 0 auto; filter: drop-shadow(0 10px 24px rgba(0,0,0,.5)); animation: float 5s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(-5px); } }
+.hero .rk { font-family: var(--display); font-size: 36px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; margin-top: 6px; line-height: 1.1; }
+.hero .sub { color: var(--ink-2); font-family: var(--display); text-transform: uppercase; letter-spacing: .12em; font-size: 14px; }
+.rrline { display: flex; justify-content: space-between; margin: 12px 0 6px; font-size: 13px; color: var(--muted); font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; }
+.rrline b { color: var(--ink); }
+.rrbar { height: 8px; background: var(--sunk); border: 1px solid var(--line); overflow: hidden; }
+.rrbar i { display: block; height: 100%; transition: width 1.1s cubic-bezier(.2,.8,.2,1); }
+.hero .next { margin-top: 6px; }
+.pips { display: flex; justify-content: center; gap: 8px; margin: 12px 0 6px; }
+.pips i { width: 26px; height: 6px; background: var(--empty); }
+.pips i.w { background: var(--win); }
+.pips i.l { background: var(--loss); }
+.stats3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+.stat { background: var(--surface); border: 1px solid var(--line); padding: 10px 8px; text-align: center; }
+.stat b { display: block; font-family: var(--display); font-size: 22px; font-weight: 600; line-height: 1.15; }
+.stat small { color: var(--muted); font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 11px; }
+
+/* Day strip */
+.days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 14px; }
+.days button {
+  background: var(--surface-2); border: 1px solid var(--line); padding: 6px 0 7px;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+.days button small { font-size: 10px; color: var(--muted); font-family: var(--display); text-transform: uppercase; letter-spacing: .08em; }
+.days button b { font-family: var(--display); font-size: 17px; font-weight: 500; }
+.days button .dot { width: 6px; height: 6px; border-radius: 50%; background: transparent; }
+.days button .dot.w { background: var(--win); }
+.days button .dot.l { background: var(--loss); }
+.days button .dot.p { border: 1px solid var(--ink-2); }
+.days button.sel { border-color: var(--ink); background: var(--surface); }
+.days button:disabled { opacity: .3; }
+
+/* Habit rows */
+.hrow { padding: 12px 0; border-top: 1px solid var(--line); }
+.hrow:first-of-type { border-top: 0; padding-top: 2px; }
+.hhead { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.hic { width: 38px; height: 38px; flex: none; display: grid; place-items: center; font-size: 20px; background: var(--surface-2); border: 1px solid var(--line); }
+.hname { flex: 1; min-width: 0; }
+.hname b { display: block; font-weight: 600; }
+.hname small { display: block; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.flame { font-family: var(--display); font-size: 15px; color: var(--ink-2); white-space: nowrap; }
+.seg { display: flex; gap: 6px; }
+.seg button {
+  flex: 1; padding: 11px 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2);
+  font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 14px;
+}
+.seg button.c.on { background: var(--win-soft); border-color: var(--win); color: var(--win); }
+.seg button.r.on { background: var(--loss-soft); border-color: var(--loss); color: var(--loss); }
+.seg button:disabled:not(.on) { opacity: .45; }
+
+/* Missions */
+.mrow {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: var(--surface-2); border: 1px solid var(--line); padding: 10px 12px; margin-top: 6px;
+}
+.mrow .box { width: 20px; height: 20px; flex: none; border: 2px solid var(--line-2); display: grid; place-items: center; font-size: 13px; color: var(--bg); }
+.mrow.on { border-color: var(--line-2); }
+.mrow.on .box { background: var(--ink); border-color: var(--ink); }
+.mrow.on .mname .mt { color: var(--muted); text-decoration: line-through; }
+.mrow .mname { flex: 1; min-width: 0; }
+.mrow .mname small { display: block; font-size: 12px; color: var(--muted); }
+.mrow .mname small.hit { color: var(--win); }
+.hsync {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
+  background: var(--surface-2); border: 1px dashed var(--line-2); padding: 9px 12px; margin-bottom: 4px; text-align: left;
+}
+.hsync b { font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 13px; font-weight: 500; }
+.hsync small { color: var(--muted); font-size: 12px; }
+.heart { color: #ff5a7a; }
+.recipe { margin: 0; padding-left: 20px; color: var(--ink-2); font-size: 15px; }
+.recipe li { margin: 0 0 12px; }
+.recipe b { color: var(--ink); }
+.recipe code, .tmpl { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: var(--sunk); border: 1px solid var(--line); padding: 1px 4px; color: var(--ink); word-break: break-all; }
+.tmpl { display: block; padding: 10px; margin: 8px 0; user-select: all; -webkit-user-select: all; }
+.hmet { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 0 0 14px; }
+.hmet div { background: var(--surface-2); border: 1px solid var(--line); padding: 8px 10px; font-size: 14px; }
+.hmet b { font-family: var(--display); font-size: 18px; display: block; }
+textarea, select {
+  width: 100%; background: var(--sunk); border: 1px solid var(--line-2); color: var(--ink);
+  font: inherit; font-size: 16px; padding: 12px; border-radius: 0;
+}
+textarea { min-height: 90px; resize: vertical; font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+textarea:focus, select:focus { outline: none; border-color: var(--ink); }
+.mrow .pts { font-family: var(--display); font-size: 13px; color: var(--muted); }
+
+.locked { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; margin: 14px 0 10px; border-left: 4px solid; }
+.locked.w { background: var(--win-soft); border-color: var(--win); }
+.locked.l { background: var(--loss-soft); border-color: var(--loss); }
+.locked b { font-family: var(--display); font-size: 22px; text-transform: uppercase; letter-spacing: .12em; }
+.locked.w b { color: var(--win); }
+.locked.l b { color: var(--loss); }
+.locked span { font-family: var(--display); font-size: 20px; }
+.gap { height: 14px; }
+
+/* Result overlay */
+#overlay { position: fixed; inset: 0; z-index: 40; display: none; }
+#overlay.show { display: block; }
+.res {
+  position: absolute; inset: 0; overflow-y: auto;
+  background-color: #0a1118;
+  background-image: radial-gradient(90% 55% at 50% 30%, var(--glow, rgba(47,211,165,.22)), transparent 70%);
+  padding: calc(var(--safe-t) + 28px) 20px calc(var(--safe-b) + 24px);
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  animation: fade .25s ease-out;
+}
+.res-in { width: 100%; max-width: 420px; }
+.res .kicker { font-family: var(--display); text-transform: uppercase; letter-spacing: .3em; font-size: 13px; color: var(--ink-2); }
+.res h1 { font-family: var(--display); font-weight: 600; font-size: 68px; line-height: 1; letter-spacing: .06em; text-transform: uppercase; margin: 6px 0 4px; animation: slam .55s cubic-bezier(.2,1.4,.4,1) both; }
+.res .delta { font-family: var(--display); font-size: 34px; font-weight: 500; animation: rise .5s .25s both; }
+.res .emb { display: block; margin: 18px auto 4px; animation: pop .6s .35s both; }
+.res .rk { font-family: var(--display); font-size: 26px; text-transform: uppercase; letter-spacing: .1em; }
+.res .banner { display: inline-block; margin-top: 10px; padding: 6px 16px; font-family: var(--display); text-transform: uppercase; letter-spacing: .25em; font-size: 15px; animation: rise .5s .6s both; }
+.res .parts { margin: 18px 0 0; text-align: left; border-top: 1px solid var(--line); }
+.res .parts div { display: flex; justify-content: space-between; padding: 8px 2px; border-bottom: 1px solid var(--line); font-size: 15px; }
+.res .parts span:last-child { font-family: var(--display); }
+.res .newb { margin-top: 18px; padding: 12px; border: 1px solid var(--line-2); background: var(--surface); text-align: left; animation: rise .5s .8s both; }
+.res .newb div { display: flex; gap: 10px; align-items: center; padding: 4px 0; }
+.res .newb .bi { font-size: 22px; }
+.res .quote { color: var(--ink-2); margin: 18px 4px; font-size: 15px; }
+.res .btn { margin-top: 8px; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes slam { from { opacity: 0; transform: scale(1.8); letter-spacing: .4em; } }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+@keyframes pop { from { opacity: 0; transform: scale(.6) rotate(-8deg); } }
+
+/* Career */
+.tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 4px; }
+.tile { background: var(--surface); border: 1px solid var(--line); padding: 12px; }
+.tile small { display: block; color: var(--muted); font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 11px; }
+.tile b { font-family: var(--display); font-size: 26px; font-weight: 600; line-height: 1.2; }
+.tile em { font-style: normal; color: var(--muted); font-size: 13px; margin-left: 4px; }
+.tile.wide { grid-column: span 2; display: flex; align-items: center; gap: 12px; }
+.chart { position: relative; min-height: 200px; touch-action: pan-y; }
+.chart svg { display: block; overflow: visible; }
+.tip {
+  position: absolute; top: 0; pointer-events: none; z-index: 2;
+  background: var(--sunk); border: 1px solid var(--line-2); padding: 6px 9px; font-size: 13px; white-space: nowrap;
+  transform: translateX(-50%); display: none;
+}
+.tip b { font-family: var(--display); letter-spacing: .06em; }
+.hm-wrap { display: grid; grid-template-columns: 14px 1fr; gap: 6px; }
+.hm-days { display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px; font-size: 9px; color: var(--muted); font-family: var(--display); }
+.hm-days span { display: flex; align-items: center; }
+.hm { display: grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; }
+.hm button { aspect-ratio: 1; border: 0; padding: 0; background: var(--empty); border-radius: 2px; }
+.hm button.w { background: var(--win); }
+.hm button.l { background: var(--loss); }
+.hm button.f { visibility: hidden; }
+.hm button.t { outline: 1px solid var(--ink); outline-offset: 1px; }
+.legend { display: flex; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--ink-2); flex-wrap: wrap; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.hstat { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.hstat:first-of-type { border-top: 0; padding-top: 0; }
+.hstat .hname small { white-space: normal; }
+.hstat .pct { font-family: var(--display); font-size: 20px; text-align: right; }
+.hstat .pct small { display: block; font-size: 10px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+.mh { display: grid; grid-template-columns: 4px 1fr auto auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); }
+.mh:first-of-type { border-top: 0; }
+.mh .bar { align-self: stretch; }
+.mh.w .bar { background: var(--win); }
+.mh.l .bar { background: var(--loss); }
+.mh .res-t b { font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 15px; }
+.mh.w .res-t b { color: var(--win); }
+.mh.l .res-t b { color: var(--loss); }
+.mh .res-t small { display: block; color: var(--muted); font-size: 12px; }
+.mh .ics { font-size: 14px; letter-spacing: 2px; }
+.mh .ics s { opacity: .45; text-decoration-color: var(--loss); }
+.mh .d { font-family: var(--display); font-size: 18px; text-align: right; min-width: 44px; }
+.mh .d small { display: block; font-size: 10px; color: var(--muted); letter-spacing: .1em; }
+.mh-right { display: flex; align-items: center; gap: 6px; }
+.empty { text-align: center; padding: 40px 12px; color: var(--ink-2); }
+.empty .emb { margin: 0 auto 10px; display: block; opacity: .8; }
+
+/* Collection */
+.badges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.badge {
+  background: var(--surface-2); border: 1px solid var(--line); padding: 12px 6px 10px;
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; position: relative;
+}
+.badge .bi {
+  width: 52px; height: 58px; display: grid; place-items: center; font-size: 26px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: linear-gradient(160deg, #3b4f62, #1d2a36);
+}
+.badge b { font-family: var(--display); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; line-height: 1.15; }
+.badge small { color: var(--muted); font-size: 11px; line-height: 1.25; }
+.badge.lock .bi { filter: grayscale(1) brightness(.5); }
+.badge.lock b { color: var(--muted); }
+.badge.on { border-color: var(--accent); }
+.badge.on::after { content: "Equipped"; position: absolute; top: 4px; right: 4px; font-size: 9px; font-family: var(--display); text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
+.badge:not(.lock) .bi { background: linear-gradient(160deg, #ff8a95, #b8283a); }
+.ladder .lr { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-top: 1px solid var(--line); }
+.ladder .lr:first-child { border-top: 0; }
+.ladder .lr b { font-family: var(--display); text-transform: uppercase; letter-spacing: .08em; font-size: 17px; flex: 1; }
+.ladder .lr small { color: var(--muted); font-size: 12px; }
+.ladder .lr.you { background: var(--accent-soft); margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
+.ladder .lr.you b::after { content: " · You"; color: var(--accent); }
+.ladder .lr.dim { opacity: .55; }
+
+/* Settings */
+.srow { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.srow:first-of-type { border-top: 0; padding-top: 0; }
+.srow .hname { flex: 1; }
+.iconbtn { background: var(--surface-2); border: 1px solid var(--line); padding: 7px 12px; font-family: var(--display); text-transform: uppercase; letter-spacing: .08em; font-size: 12px; color: var(--ink-2); }
+.howto { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 15px; }
+.howto li { margin: 6px 0; }
+.howto b { color: var(--ink); }
+details summary { cursor: pointer; font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 13px; color: var(--muted); padding: 10px 0 0; }
+
+/* Forms */
+label.f { display: block; margin-bottom: 14px; }
+label.f > span { display: block; font-family: var(--display); text-transform: uppercase; letter-spacing: .12em; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+input[type=text] {
+  width: 100%; background: var(--sunk); border: 1px solid var(--line-2); color: var(--ink);
+  font: inherit; font-size: 16px; padding: 12px; border-radius: 0;
+}
+input[type=text]:focus { outline: none; border-color: var(--ink); }
+.idrow { display: grid; grid-template-columns: 1fr 18px 92px; align-items: center; gap: 6px; }
+.idrow em { font-style: normal; text-align: center; color: var(--muted); font-family: var(--display); font-size: 20px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { position: relative; }
+button.chip { background: none; border: 0; padding: 0; text-align: left; }
+.chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.chip span { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; background: var(--surface-2); border: 1px solid var(--line); font-size: 15px; }
+.chip input:checked + span { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+.chip input:focus-visible + span { outline: 2px solid var(--ink); }
+.icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 6px; }
+.icons .chip span { justify-content: center; width: 100%; padding: 8px 0; font-size: 20px; }
+
+/* Sheet */
+#sheet { position: fixed; inset: 0; z-index: 30; display: none; }
+#sheet.show { display: block; }
+#sheet .bd { position: absolute; inset: 0; background: rgba(0,0,0,.6); animation: fade .2s; }
+#sheet .panel {
+  position: absolute; left: 0; right: 0; bottom: 0; max-width: 520px; margin: 0 auto;
+  max-height: 90dvh; overflow-y: auto; background: var(--surface); border-top: 2px solid var(--accent);
+  padding: 18px 16px calc(20px + var(--safe-b)); animation: up .25s cubic-bezier(.2,.8,.2,1);
+}
+#sheet h2 { font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 20px; margin: 0 0 14px; display: flex; justify-content: space-between; align-items: center; }
+#sheet h2 button { background: none; border: 0; font-size: 26px; color: var(--muted); line-height: 1; padding: 0 4px; }
+@keyframes up { from { transform: translateY(100%); } }
+
+/* Onboarding */
+.ob { padding: calc(28px) 0 0; }
+.logo { text-align: center; margin-bottom: 18px; }
+.logo h1 { font-family: var(--display); font-weight: 600; font-size: 54px; letter-spacing: .14em; margin: 4px 0 0; line-height: 1; }
+.logo h1 span { color: var(--accent); }
+.logo p { margin: 6px 0 0; color: var(--ink-2); font-family: var(--display); text-transform: uppercase; letter-spacing: .18em; font-size: 13px; }
+.step { font-family: var(--display); text-transform: uppercase; letter-spacing: .12em; font-size: 14px; margin: 0 0 10px; display: flex; gap: 8px; align-items: center; }
+.step i { font-style: normal; background: var(--accent); color: #fff; width: 22px; height: 22px; display: grid; place-items: center; font-size: 13px; }
+
+#toast {
+  position: fixed; left: 50%; bottom: calc(86px + var(--safe-b)); z-index: 50;
+  transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+  background: var(--ink); color: var(--bg); padding: 10px 16px; font-weight: 600; font-size: 14px;
+  transition: opacity .2s, transform .2s; max-width: calc(100vw - 32px); text-align: center;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top" id="top"></header>
+  <main id="view"></main>
+</div>
+<nav class="tabs" aria-label="Main">
+  <div class="in">
+    <button data-act="tab" data-tab="play">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>Play</button>
+    <button data-act="tab" data-tab="career">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20h18M5 16l5-5 4 3 6-7"/></svg>Career</button>
+    <button data-act="tab" data-tab="collection">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4.5v9L12 20l-8-4.5v-9z"/><path d="M12 7l1.6 3.3 3.4.4-2.5 2.3.7 3.4-3.2-1.7-3.2 1.7.7-3.4L7 10.7l3.4-.4z"/></svg>Collection</button>
+    <button data-act="tab" data-tab="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Settings</button>
+  </div>
+</nav>
+<div id="overlay" role="dialog" aria-modal="true" aria-label="Match result"></div>
+<div id="sheet" role="dialog" aria-modal="true"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+
+<script>
+'use strict';
+
+/* ---------- Constants ---------- */
+const KEY = 'ranked.v1';
+const PLACEMENTS = 5;
+const RADIANT_AT = 2400;
+const MISSION_RR = 3, MISSION_CAP = 4;
+
+const TIERS = [
+  { name: 'Iron',      c1: '#4f5358', c2: '#b4b9bf' },
+  { name: 'Bronze',    c1: '#7a4a24', c2: '#e0a56b' },
+  { name: 'Silver',    c1: '#6f7b85', c2: '#f1f4f7' },
+  { name: 'Gold',      c1: '#9c6d12', c2: '#f9de7c' },
+  { name: 'Platinum',  c1: '#1c7480', c2: '#93ecf4' },
+  { name: 'Diamond',   c1: '#7434a0', c2: '#f2b8ff' },
+  { name: 'Ascendant', c1: '#137a45', c2: '#a1f3c3' },
+  { name: 'Immortal',  c1: '#8a1c33', c2: '#ff8fa0' },
+  { name: 'Radiant',   c1: '#d4a72c', c2: '#fffbe6' },
+];
+
+const SHAPES = [
+  { outer: 'M50 10 L84 30 L84 70 L50 90 L16 70 L16 30Z', inner: 'M50 30 L67 40 L67 60 L50 70 L33 60 L33 40Z' },
+  { outer: 'M50 7 L86 28 L86 72 L50 93 L14 72 L14 28Z', inner: 'M50 27 L71 64 L29 64Z' },
+  { outer: 'M50 6 L86 18 L82 58 Q74 82 50 95 Q26 82 18 58 L14 18Z', inner: 'M50 25 L68 32 L65 56 Q60 70 50 77 Q40 70 35 56 L32 32Z' },
+  { outer: 'M14 22 L30 9 L40 21 L50 4 L60 21 L70 9 L86 22 L82 58 Q74 82 50 95 Q26 82 18 58Z', inner: 'M50 32 L63 52 L50 77 L37 52Z' },
+  { outer: 'M50 4 L82 28 L74 74 L50 96 L26 74 L18 28Z', inner: 'M50 24 L65 35 L61 65 L50 77 L39 65 L35 35Z', facets: 'M18 28 L50 50 L82 28 M50 50 L50 96' },
+  { outer: 'M50 4 L92 42 L50 96 L8 42Z', inner: 'M50 24 L71 43 L50 72 L29 43Z', facets: 'M8 42 L92 42 M29 23 L50 42 L71 23' },
+  { outer: 'M50 4 L72 36 L50 94 L28 36Z', inner: 'M50 22 L62 38 L50 70 L38 38Z',
+    wings: 'M31 40 L4 26 L14 54 L38 64Z M69 40 L96 26 L86 54 L62 64Z' },
+  { outer: 'M50 2 L70 32 L50 96 L30 32Z', inner: 'M50 20 L60 34 L50 72 L40 34Z',
+    wings: 'M33 34 L2 10 L8 40 L0 50 L18 58 L10 70 L40 72Z M67 34 L98 10 L92 40 L100 50 L82 58 L90 70 L60 72Z' },
+];
+
+const HABIT_PRESETS = [
+  ['📱', 'Doomscrolling'], ['🍔', 'Junk food'], ['🚬', 'Smoking / vaping'], ['🍺', 'Drinking'],
+  ['⏰', 'Procrastinating'], ['🌙', 'Staying up late'], ['💅', 'Nail biting'], ['🛒', 'Impulse buying'],
+  ['🎮', 'Gaming too long'], ['🍬', 'Sugar'], ['☕', 'Too much caffeine'], ['🔞', 'Porn'],
+  ['🤬', 'Swearing'], ['🛌', 'Hitting snooze'],
+];
+const MISSION_PRESETS = [
+  ['💧', 'Drink 8 glasses of water'], ['🚶', '10-minute walk'], ['📖', 'Read 10 pages'],
+  ['🧘', '5 minutes of meditation'], ['💪', 'Work out'], ['🛏️', 'In bed by 11pm'],
+  ['📵', 'No phone for the first 30 min'], ['🥗', 'Eat a vegetable'], ['✍️', 'Journal for 5 minutes'],
+  ['🧹', 'Tidy up for 10 minutes'],
+];
+const ICONS = ['📱','🍔','🚬','🍺','⏰','🌙','💅','🛒','🎮','🍬','☕','🔞','🤬','🛌','💸','🍕','🎰','📺','😤','🥤','🍷','💊','🧠','🔥'];
+
+const BADGES = [
+  { id: 'first_blood',    icon: '🩸', name: 'First Blood',    desc: 'Win your first match' },
+  { id: 'placed',         icon: '🎯', name: 'Placed',         desc: 'Finish your 5 placement matches' },
+  { id: 'double',         icon: '✌️', name: 'Double Kill',    desc: '2-day win streak' },
+  { id: 'triple',         icon: '🔱', name: 'Triple Kill',    desc: '3-day win streak' },
+  { id: 'quadra',         icon: '🍀', name: 'Quadra Kill',    desc: '4-day win streak' },
+  { id: 'ace',            icon: '🂡', name: 'Ace',            desc: '5-day win streak' },
+  { id: 'flawless',       icon: '💎', name: 'Flawless',       desc: '7-day win streak' },
+  { id: 'team_ace',       icon: '🛡️', name: 'Team Ace',       desc: '14-day win streak' },
+  { id: 'unstoppable',    icon: '⚡', name: 'Unstoppable',    desc: '30-day win streak' },
+  { id: 'immortal_will',  icon: '🪽', name: 'Immortal Will',  desc: '60-day win streak' },
+  { id: 'radiant_soul',   icon: '☀️', name: 'Radiant Soul',   desc: '100-day win streak' },
+  { id: 'comeback',       icon: '↩️', name: 'Comeback',       desc: 'Win the day after a loss' },
+  { id: 'clutch',         icon: '🫀', name: 'Clutch',         desc: 'Win after 2+ losses in a row' },
+  { id: 'squad',          icon: '👥', name: 'Full Squad',     desc: 'Win with 3+ habits all clean' },
+  { id: 'promoted',       icon: '⬆️', name: 'Promoted',       desc: 'Rank up after placements' },
+  { id: 'gold',           icon: '🥇', name: 'Gold Standard',  desc: 'Reach Gold' },
+  { id: 'diamond',        icon: '💠', name: 'Diamond Mind',   desc: 'Reach Diamond' },
+  { id: 'immortal',       icon: '👑', name: 'Immortal',       desc: 'Reach Immortal' },
+  { id: 'radiant',        icon: '🌟', name: 'Radiant',        desc: 'Reach the top of the ladder' },
+  { id: 'grinder',        icon: '⚙️', name: 'Grinder',        desc: 'Complete 10 missions' },
+  { id: 'overachiever',   icon: '🚀', name: 'Overachiever',   desc: 'Complete 4 missions in a day' },
+  { id: 'mission_master', icon: '🏅', name: 'Mission Master', desc: 'Complete 100 missions' },
+  { id: 'veteran',        icon: '🎖️', name: 'Veteran',        desc: 'Play 30 matches' },
+  { id: 'centurion',      icon: '🏛️', name: 'Centurion',      desc: 'Play 100 matches' },
+];
+
+const HEALTH_SHORTCUT = 'Ranked Health';
+const HEALTH_PREFIX = 'ranked-health:';
+const METRICS = {
+  steps:    { label: 'Steps',                unit: 'steps' },
+  exercise: { label: 'Exercise minutes',     unit: 'min' },
+  workouts: { label: 'Workouts',             unit: 'workout(s)' },
+  mindful:  { label: 'Mindful minutes',      unit: 'min' },
+  water:    { label: 'Water',                unit: 'mL (or fl oz)' },
+  bedtime:  { label: 'Bedtime (last night)', unit: '', time: true },
+};
+// Used for missions whose Health target the player hasn't set yet.
+const DEFAULT_RULES = {
+  'drink 8 glasses of water': { metric: 'water', value: 2000 },
+  '10-minute walk': { metric: 'exercise', value: 10 },
+  '5 minutes of meditation': { metric: 'mindful', value: 5 },
+  'work out': { metric: 'workouts', value: 1 },
+  'in bed by 11pm': { metric: 'bedtime', value: '23:00' },
+};
+const HEALTH_TEMPLATE = `${HEALTH_PREFIX}date=DATE&steps=STEPS&exercise=EXERCISE&workouts=WORKOUTS&mindful=MINDFUL&water=WATER&bedtime=BEDTIME`;
+
+const WIN_LINES = [
+  'Clean round. Queue up again tomorrow.',
+  'That is how climbs are built: one round at a time.',
+  'GG. Your future self says thanks.',
+  'Another round in the bag. Stay locked in.',
+  'Consistency beats talent. You are proving it.',
+];
+const LOSS_LINES = [
+  'Every pro has a losing streak. Reset and requeue.',
+  'One round does not decide the match.',
+  'Review the VOD: what triggered it? Plan for that moment tomorrow.',
+  'Deranks are temporary. Giving up is the only real loss.',
+  'You logged it honestly. That is the first step back up.',
+];
+
+/* ---------- Helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+const pad = n => String(n).padStart(2, '0');
+const dkey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseKey = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (k, n) => { const d = parseKey(k); d.setDate(d.getDate() + n); return dkey(d); };
+const today = () => dkey(new Date());
+const fmtDate = (k, opts = { weekday: 'short', month: 'short', day: 'numeric' }) => parseKey(k).toLocaleDateString(undefined, opts);
+const sign = n => n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '±0';
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function rankOf(total) {
+  if (total >= RADIANT_AT) return { tier: 8, div: null, rr: total - RADIANT_AT, idx: 24, name: 'Radiant' };
+  const idx = Math.floor(total / 100), tier = Math.floor(idx / 3), div = idx % 3 + 1;
+  return { tier, div, rr: total % 100, idx, name: `${TIERS[tier].name} ${div}` };
+}
+const rankAtIdx = idx => rankOf(idx * 100);
+
+/* ---------- Storage ---------- */
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) return normalize(JSON.parse(raw));
+  } catch (e) { /* ignore */ }
+  return null;
+}
+function normalize(s) {
+  if (!s || typeof s !== 'object') return null;
+  s.habits = Array.isArray(s.habits) ? s.habits : [];
+  s.missions = Array.isArray(s.missions) ? s.missions : [];
+  s.days = s.days && typeof s.days === 'object' ? s.days : {};
+  return s;
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) { toast('Could not save. Storage may be full or blocked.'); }
+}
+
+let S = load();
+const ui = { tab: 'play', day: today(), histLimit: 15 };
+
+/* ---------- Rank engine ---------- */
+// Replays every locked day in order, so editing a past day always gives a consistent result.
+function compute() {
+  const hIds = new Set(S.habits.map(h => h.id));
+  const mIds = new Set(S.missions.map(m => m.id));
+  const keys = Object.keys(S.days)
+    .filter(k => S.days[k].locked && Object.keys(S.days[k].h || {}).some(id => hIds.has(id)))
+    .sort();
+  let total = 0, streak = 0, best = 0, prev = null, prevWin = false;
+  let wins = 0, losses = 0, mTotal = 0, peak = -1, lossRun = 0;
+  const matches = [], badges = {};
+  const give = (id, k) => { if (!(id in badges)) badges[id] = k; };
+
+  keys.forEach((k, i) => {
+    const d = S.days[k];
+    const vals = Object.entries(d.h).filter(([id]) => hIds.has(id)).map(([, v]) => v);
+    const rel = vals.filter(v => v === 'r').length, cl = vals.length - rel;
+    const win = rel === 0;
+    const consec = prev !== null && addDays(prev, 1) === k;
+    const parts = [];
+    let base;
+    if (win) {
+      streak = consec && prevWin ? streak + 1 : 1;
+      const sb = Math.min(streak - 1, 5) * 2, mh = Math.min((cl - 1) * 2, 6);
+      parts.push(['Clean day', 20]);
+      if (sb) parts.push([`Win streak ×${streak}`, sb]);
+      if (mh) parts.push(['Multi-habit bonus', mh]);
+      base = 20 + sb + mh;
+    } else {
+      streak = 0;
+      const pen = Math.min(30, 20 + (rel - 1) * 5), held = Math.min(cl * 2, 6);
+      parts.push([rel > 1 ? `Relapses ×${rel}` : 'Relapse', -pen]);
+      if (held) parts.push(['Habits you held', held]);
+      base = -pen + held;
+    }
+    const placement = i < PLACEMENTS;
+    if (placement) { parts.push(['Placement ×2', base]); base *= 2; }
+    const md = (d.m || []).filter(id => mIds.has(id)).length, mc = Math.min(md, MISSION_CAP), mb = mc * MISSION_RR;
+    if (mb) parts.push([`Missions ×${mc}`, mb]);
+    const before = total;
+    total = Math.max(0, total + base + mb);
+    if (total - before !== base + mb) parts.push(['Can’t drop below 0 RR', total - before - (base + mb)]);
+    if (win) wins++; else losses++;
+    mTotal += md;
+    const rb = rankOf(before), ra = rankOf(total);
+    if (i >= PLACEMENTS - 1) peak = Math.max(peak, total);
+
+    if (win) give('first_blood', k);
+    [[2, 'double'], [3, 'triple'], [4, 'quadra'], [5, 'ace'], [7, 'flawless'], [14, 'team_ace'],
+     [30, 'unstoppable'], [60, 'immortal_will'], [100, 'radiant_soul']].forEach(([n, id]) => { if (streak >= n) give(id, k); });
+    if (i === PLACEMENTS - 1) give('placed', k);
+    if (win && prev !== null && !prevWin) give('comeback', k);
+    if (win && lossRun >= 2) give('clutch', k);
+    if (win && cl >= 3) give('squad', k);
+    if (i >= PLACEMENTS && ra.idx > rb.idx) give('promoted', k);
+    if (i >= PLACEMENTS - 1) {
+      if (ra.tier >= 3) give('gold', k);
+      if (ra.tier >= 5) give('diamond', k);
+      if (ra.tier >= 7) give('immortal', k);
+      if (ra.tier >= 8) give('radiant', k);
+    }
+    if (mTotal >= 10) give('grinder', k);
+    if (mTotal >= 100) give('mission_master', k);
+    if (md >= 4) give('overachiever', k);
+    if (i + 1 >= 30) give('veteran', k);
+    if (i + 1 >= 100) give('centurion', k);
+
+    lossRun = win ? 0 : lossRun + 1;
+    best = Math.max(best, streak);
+    matches.push({ key: k, i, win, rel, cl, streak, parts, delta: total - before, total, placement, md, rb, ra });
+    prev = k; prevWin = win;
+  });
+
+  const t = today();
+  const curStreak = prev && prevWin && (prev === t || prev === addDays(t, -1)) ? streak : 0;
+  const placed = matches.length >= PLACEMENTS;
+  return {
+    matches, total, placed, badges, wins, losses, best,
+    streak: curStreak, missions: mTotal,
+    rank: placed ? rankOf(total) : null,
+    peak: placed ? rankOf(peak) : null,
+    byKey: Object.fromEntries(matches.map(m => [m.key, m])),
+  };
+}
+
+function habitStats(h, C) {
+  let clean = 0, rel = 0, best = 0, run = 0, prev = null, prevV = null;
+  for (const m of C.matches) {
+    const v = S.days[m.key].h[h.id];
+    if (!v) continue;
+    if (v === 'c') {
+      clean++;
+      run = prev && addDays(prev, 1) === m.key && prevV === 'c' ? run + 1 : 1;
+      best = Math.max(best, run);
+    } else { rel++; run = 0; }
+    prev = m.key; prevV = v;
+  }
+  const t = today();
+  const cur = prev && prevV === 'c' && (prev === t || prev === addDays(t, -1)) ? run : 0;
+  const n = clean + rel;
+  return { clean, rel, best, cur, pct: n ? Math.round(clean / n * 100) : null };
+}
+
+const activeHabits = k => S.habits.filter(h => h.start <= k && (!h.archivedOn || k < h.archivedOn));
+const activeMissions = () => S.missions.filter(m => !m.archived);
+const last7 = () => { const t = today(); return [6, 5, 4, 3, 2, 1, 0].map(n => addDays(t, -n)); };
+const dayRec = k => (S.days[k] ||= { h: {}, m: [], locked: false });
+
+/* ---------- Apple Health (via the Shortcuts app) ---------- */
+const ruleFor = m => m.health !== undefined ? m.health : DEFAULT_RULES[m.name.trim().toLowerCase()] || null;
+// Bedtimes before noon count as after midnight, so 00:30 is later than 23:00.
+const bedMins = t => { const [h, m] = t.split(':').map(Number); return (h < 12 ? h + 24 : h) * 60 + m; };
+function meets(rule, metrics) {
+  const v = metrics[rule.metric];
+  if (v == null) return false;
+  return METRICS[rule.metric].time ? bedMins(v) <= bedMins(rule.value) : v >= rule.value;
+}
+function ruleText(rule) {
+  if (!rule) return 'Manual only';
+  const M = METRICS[rule.metric];
+  return M.time ? `In bed by ${rule.value}` : `${M.label} ≥ ${rule.value.toLocaleString()}${M.unit === 'min' ? ' min' : ''}`;
+}
+function metricText(k, v) {
+  const M = METRICS[k];
+  if (M.time) return v;
+  return `${Math.round(v * 10) / 10 === Math.round(v) ? Math.round(v).toLocaleString() : (Math.round(v * 10) / 10).toLocaleString()}${M.unit === 'min' ? ' min' : ''}`;
+}
+function parseNum(raw) {
+  let v = String(raw).replace(/[^\d.,-]/g, '');
+  if (!v) return null;
+  if (/^\d{1,3}([.,]\d{3})+$/.test(v)) v = v.replace(/[.,]/g, ''); // 8,432 or 8.432 steps
+  else v = v.replace(',', '.');
+  const n = parseFloat(v);
+  return isFinite(n) ? n : null;
+}
+function parseTime(raw) {
+  const m = String(raw).match(/(\d{1,2})[:.](\d{2})\s*([ap])?\.?\s*m?/i);
+  if (!m) return null;
+  let h = +m[1];
+  const ap = (m[3] || '').toLowerCase();
+  if (ap === 'p' && h < 12) h += 12;
+  if (ap === 'a' && h === 12) h = 0;
+  return h < 24 && +m[2] < 60 ? `${pad(h)}:${m[2]}` : null;
+}
+function parseHealth(text) {
+  let t = String(text || '');
+  try { t = decodeURIComponent(t); } catch (e) { /* keep raw */ }
+  const i = t.indexOf(HEALTH_PREFIX);
+  if (i < 0) return null;
+  const metrics = {};
+  let date = today();
+  for (const part of t.slice(i + HEALTH_PREFIX.length).split('&')) {
+    const eq = part.indexOf('=');
+    if (eq < 0) continue;
+    const k = part.slice(0, eq).trim().toLowerCase(), v = part.slice(eq + 1).trim();
+    if (k === 'date') { const d = v.match(/\d{4}-\d{2}-\d{2}/); if (d) date = d[0]; }
+    else if (k === 'bedtime') { const tm = parseTime(v); if (tm) metrics.bedtime = tm; }
+    else if (METRICS[k]) { const n = parseNum(v); if (n !== null) metrics[k] = n; }
+  }
+  return Object.keys(metrics).length ? { date, metrics } : null;
+}
+function applyHealth(p) {
+  if (!S || !S.profile) return;
+  if (!last7().includes(p.date)) { toast(`That Health data is for ${fmtDate(p.date)}, outside the last 7 days.`); return; }
+  const before = compute().total;
+  S.health = S.health || {};
+  S.health[p.date] = { ...(S.health[p.date] || {}), ...p.metrics, at: Date.now() };
+  const d = dayRec(p.date);
+  d.m = d.m || []; d.hm = d.hm || [];
+  const hits = [];
+  for (const m of activeMissions()) {
+    const r = ruleFor(m);
+    if (!r || !meets(r, p.metrics)) continue;
+    if (!d.m.includes(m.id)) { d.m.push(m.id); hits.push(m); }
+    if (!d.hm.includes(m.id)) d.hm.push(m.id);
+  }
+  save();
+  const diff = compute().total - before;
+  ui.day = p.date;
+  render();
+  healthResultSheet(p, hits, diff, d.locked);
+}
+function runHealthShortcut() {
+  try { sessionStorage.setItem('ranked.healthPending', '1'); } catch (e) { /* ignore */ }
+  location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(HEALTH_SHORTCUT);
+}
+const healthPending = () => { try { return sessionStorage.getItem('ranked.healthPending') === '1'; } catch (e) { return false; } };
+const clearHealthPending = () => { try { sessionStorage.removeItem('ranked.healthPending'); } catch (e) { /* ignore */ } };
+
+/* ---------- Emblems ---------- */
+let EMB = 0;
+function starPath(cx, cy, R, r, n) {
+  let d = '';
+  for (let i = 0; i < n * 2; i++) {
+    const a = Math.PI / n * i - Math.PI / 2, rad = i % 2 ? r : R;
+    d += (i ? 'L' : 'M') + (cx + rad * Math.cos(a)).toFixed(1) + ' ' + (cy + rad * Math.sin(a)).toFixed(1) + ' ';
+  }
+  return d + 'Z';
+}
+function emblem(r, size = 96) {
+  const h = Math.round(size * 1.18);
+  const open = `<svg class="emb" width="${size}" height="${h}" viewBox="0 0 100 118" aria-hidden="true">`;
+  if (!r) {
+    return open + `<path d="M50 8 L86 29 L86 71 L50 92 L14 71 L14 29Z" fill="rgba(255,255,255,.03)" stroke="#5b6774" stroke-width="3" stroke-dasharray="7 5"/>
+      <text x="50" y="62" text-anchor="middle" font-family="Oswald, sans-serif" font-size="30" fill="#8a95a0">?</text></svg>`;
+  }
+  const id = 'em' + (++EMB), T = TIERS[r.tier];
+  let s = open + `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${T.c2}"/><stop offset="1" stop-color="${T.c1}"/></linearGradient>`;
+  if (r.tier === 8) s += `<filter id="${id}f" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="5"/></filter>`;
+  s += '</defs>';
+  if (r.tier === 8) {
+    const star = starPath(50, 52, 47, 19, 8);
+    s += `<path d="${star}" fill="#ffd34d" opacity=".75" filter="url(#${id}f)"/>
+      <path d="${star}" fill="url(#${id})" stroke="#6b5212" stroke-width="2" stroke-linejoin="round"/>
+      <path d="${starPath(50, 52, 25, 11, 8)}" fill="#fff"/>
+      <circle cx="50" cy="52" r="7" fill="${T.c1}"/>`;
+  } else {
+    const sh = SHAPES[r.tier];
+    if (sh.wings) s += `<path d="${sh.wings}" fill="${T.c1}" stroke="rgba(0,0,0,.5)" stroke-width="2" stroke-linejoin="round"/><path d="${sh.wings}" fill="url(#${id})" opacity=".45"/>`;
+    s += `<path d="${sh.outer}" fill="url(#${id})" stroke="rgba(0,0,0,.55)" stroke-width="2.5" stroke-linejoin="round"/>`;
+    if (sh.facets) s += `<path d="${sh.facets}" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>`;
+    s += `<path d="${sh.inner}" fill="${T.c1}" opacity=".6" stroke="${T.c2}" stroke-opacity=".5" stroke-width="1.5"/>`;
+    for (let i = 0; i < r.div; i++) {
+      const x = 50 + (i - (r.div - 1) / 2) * 15;
+      s += `<path d="M${x} 102 L${x + 6} 109 L${x} 116 L${x - 6} 109Z" fill="${T.c2}" stroke="rgba(0,0,0,.5)" stroke-width="1.5"/>`;
+    }
+  }
+  return s + '</svg>';
+}
+
+/* ---------- Views ---------- */
+function topbar(C) {
+  const p = S.profile, title = BADGES.find(b => b.id === p.title && C.badges[b.id]);
+  return `${emblem(C.rank, 30)}
+    <div class="who"><b>${esc(p.name)} <span>#${esc(p.tag)}</span></b>${title ? `<small>${esc(title.name)}</small>` : `<small>${C.rank ? esc(C.rank.name) : 'Unranked'}</small>`}</div>
+    <div class="streak" title="Current win streak" aria-label="Current win streak ${C.streak}">🔥 ${C.streak}</div>`;
+}
+
+function hero(C) {
+  const r = C.rank;
+  let top;
+  if (!r) {
+    const n = C.matches.length;
+    top = `<section class="hero">${emblem(null, 112)}
+      <div class="rk">Unranked</div>
+      <div class="sub">Placement matches ${n} / ${PLACEMENTS}</div>
+      <div class="pips">${Array.from({ length: PLACEMENTS }, (_, i) => `<i class="${C.matches[i] ? (C.matches[i].win ? 'w' : 'l') : ''}"></i>`).join('')}</div>
+      <div class="muted small">Check in for ${PLACEMENTS} days to reveal your rank. Placement RR counts double.</div>
+    </section>`;
+  } else {
+    const T = TIERS[r.tier];
+    top = `<section class="hero">${emblem(r, 120)}
+      <div class="rk" style="color:${T.c2}">${r.name}</div>
+      <div class="rrline"><span>Rank rating</span><b>${r.tier === 8 ? `${r.rr} RR` : `${r.rr} / 100 RR`}</b></div>
+      <div class="rrbar"><i style="width:${r.tier === 8 ? 100 : r.rr}%;background:linear-gradient(90deg,${T.c1},${T.c2})"></i></div>
+      <div class="next muted small">${r.tier === 8 ? 'Top of the ladder. Keep your RR climbing.' : `${100 - r.rr} RR to ${rankAtIdx(r.idx + 1).name}`}</div>
+    </section>`;
+  }
+  return top + `<div class="stats3">
+    <div class="stat"><b>🔥 ${C.streak}</b><small>Win streak</small></div>
+    <div class="stat"><b>${C.wins}–${C.losses}</b><small>Record</small></div>
+    <div class="stat"><b>${C.best}</b><small>Best streak</small></div>
+  </div>`;
+}
+
+function viewPlay(C) {
+  const t = today(), days = last7();
+  if (!days.includes(ui.day)) ui.day = t;
+  const k = ui.day, day = S.days[k] || { h: {}, m: [] }, locked = !!day.locked;
+  const habits = activeHabits(k), m = C.byKey[k];
+  const label = k === t ? 'Today’s match' : k === addDays(t, -1) ? 'Yesterday’s match' : fmtDate(k);
+
+  const strip = days.map(dk => {
+    const d = parseKey(dk), mm = C.byKey[dk], rec = S.days[dk];
+    const st = mm ? (mm.win ? 'w' : 'l') : rec && !rec.locked && Object.keys(rec.h || {}).length ? 'p' : '';
+    const dis = activeHabits(dk).length === 0;
+    const desc = mm ? (mm.win ? 'victory' : 'defeat') : st === 'p' ? 'in progress' : 'not played';
+    return `<button data-act="day" data-day="${dk}" class="${dk === k ? 'sel' : ''}" ${dis ? 'disabled' : ''} aria-label="${fmtDate(dk)}, ${desc}" aria-pressed="${dk === k}">
+      <small>${dk === t ? 'Today' : DOW[d.getDay()]}</small><b>${d.getDate()}</b><i class="dot ${st}"></i></button>`;
+  }).join('');
+
+  let body;
+  if (!habits.length) {
+    body = `<p class="muted">No habits were being tracked on this day.</p>`;
+  } else {
+    body = habits.map(h => {
+      const v = day.h?.[h.id], hs = habitStats(h, C);
+      return `<div class="hrow">
+        <div class="hhead"><span class="hic">${esc(h.icon)}</span>
+          <div class="hname"><b>${esc(h.name)}</b>${h.why ? `<small>${esc(h.why)}</small>` : ''}</div>
+          ${hs.cur ? `<span class="flame" title="Clean streak">🔥 ${hs.cur}d</span>` : ''}</div>
+        <div class="seg" role="group" aria-label="${esc(h.name)}">
+          <button class="c ${v === 'c' ? 'on' : ''}" data-act="mark" data-id="${h.id}" data-v="c" aria-pressed="${v === 'c'}" ${locked ? 'disabled' : ''}>✓ Clean</button>
+          <button class="r ${v === 'r' ? 'on' : ''}" data-act="mark" data-id="${h.id}" data-v="r" aria-pressed="${v === 'r'}" ${locked ? 'disabled' : ''}>✕ Relapsed</button>
+        </div></div>`;
+    }).join('');
+  }
+
+  const ms = activeMissions();
+  const done = new Set(day.m || []);
+  const viaHealth = new Set(day.hm || []), hdata = S.health?.[k];
+  const anyRule = ms.some(mi => ruleFor(mi));
+  const syncRow = anyRule ? `<button class="hsync" data-act="health-run">
+      <span><b><span class="heart">♥</span> Sync Apple Health</b><br><small>${hdata ? `Synced ${new Date(hdata.at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}` : 'Auto-complete missions from Health'}</small></span>
+      <small>Run shortcut ›</small></button>` : '';
+  const hint = mi => {
+    const r = ruleFor(mi);
+    if (!r) return '';
+    if (viaHealth.has(mi.id)) return `<small class="hit">♥ Done via Health${hdata && hdata[r.metric] != null ? ` · ${esc(metricText(r.metric, hdata[r.metric]))}` : ''}</small>`;
+    const now = hdata && hdata[r.metric] != null ? ` · now ${esc(metricText(r.metric, hdata[r.metric]))}` : '';
+    return `<small><span class="heart">♥</span> ${esc(ruleText(r))}${now}</small>`;
+  };
+  const missions = `<div class="gap"></div>
+    <div class="h"><span>Daily missions</span><span>+${MISSION_RR} RR each · max ${MISSION_CAP}</span></div>
+    ${ms.length ? syncRow : ''}
+    ${ms.length ? ms.map(mi => `<button class="mrow ${done.has(mi.id) ? 'on' : ''}" data-act="mission" data-id="${mi.id}" aria-pressed="${done.has(mi.id)}">
+        <span class="box">${done.has(mi.id) ? '✓' : ''}</span><span>${esc(mi.icon)}</span><span class="mname"><span class="mt">${esc(mi.name)}</span>${hint(mi)}</span><span class="pts">+${MISSION_RR}</span></button>`).join('')
+      : `<p class="muted small">No missions yet. <button class="linkbtn" data-act="tab" data-tab="settings">Add some in Settings</button></p>`}`;
+
+  let footer = '';
+  if (habits.length) {
+    if (locked && m) {
+      footer = `<div class="locked ${m.win ? 'w' : 'l'}"><b>${m.win ? 'Victory' : 'Defeat'}</b><span>${sign(m.delta)} RR</span></div>
+        <button class="btn ghost" data-act="unlock">Edit this match</button>`;
+    } else {
+      const left = habits.filter(h => !day.h?.[h.id]).length;
+      footer = `<div class="gap"></div><button class="btn" data-act="lockin" ${left ? 'disabled' : ''}>${left ? `Mark ${left} more habit${left > 1 ? 's' : ''}` : 'Lock in'}</button>`;
+    }
+  }
+
+  return hero(C) + `<section class="card">
+    <div class="h"><b>${esc(label)}</b><span>${locked ? 'Locked' : 'Check in'}</span></div>
+    <div class="days">${strip}</div>
+    ${body}${missions}${footer}
+  </section>`;
+}
+
+function viewCareer(C) {
+  if (!C.matches.length) {
+    return `<div class="empty">${emblem(null, 80)}<p><b>No matches yet.</b></p><p class="small">Lock in your first check-in on the Play tab and your career stats will show up here.</p>
+      <button class="btn sm" data-act="tab" data-tab="play">Go to Play</button></div>`;
+  }
+  const n = C.matches.length, wr = Math.round(C.wins / n * 100);
+  const tiles = `<div class="tiles">
+    <div class="tile"><small>Matches</small><b>${n}</b><em>${C.wins}W ${C.losses}L</em></div>
+    <div class="tile"><small>Win rate</small><b>${wr}%</b></div>
+    <div class="tile"><small>Best streak</small><b>${C.best}</b><em>days</em></div>
+    <div class="tile"><small>Missions done</small><b>${C.missions}</b></div>
+    <div class="tile wide">${emblem(C.peak, 40)}<div><small>Peak rank</small><b>${C.peak ? C.peak.name : 'In placements'}</b></div></div>
+  </div>`;
+
+  const habits = S.habits.map(h => {
+    const hs = habitStats(h, C);
+    return `<div class="hstat"><span class="hic">${esc(h.icon)}</span>
+      <div class="hname"><b>${esc(h.name)}${h.archivedOn ? ' <span class="muted small">(archived)</span>' : ''}</b>
+      <small>🔥 ${hs.cur} now · best ${hs.best} · ${hs.clean} clean, ${hs.rel} relapse${hs.rel === 1 ? '' : 's'}</small></div>
+      <div class="pct">${hs.pct === null ? '—' : hs.pct + '%'}<small>Clean</small></div></div>`;
+  }).join('');
+
+  const list = C.matches.slice().reverse();
+  const hist = list.slice(0, ui.histLimit).map(m => {
+    const rec = S.days[m.key];
+    const ics = S.habits.filter(h => rec.h[h.id]).map(h => rec.h[h.id] === 'r'
+      ? `<s title="${esc(h.name)}: relapsed">${esc(h.icon)}</s>` : `<span title="${esc(h.name)}: clean">${esc(h.icon)}</span>`).join('');
+    return `<div class="mh ${m.win ? 'w' : 'l'}"><i class="bar"></i>
+      <div class="res-t"><b>${m.win ? 'Victory' : 'Defeat'}</b><small>${fmtDate(m.key)}${m.placement ? ` · Placement ${m.i + 1}` : ''}${m.md ? ` · ${m.md} mission${m.md > 1 ? 's' : ''}` : ''}</small></div>
+      <div class="ics">${ics}</div>
+      <div class="mh-right"><div class="d">${sign(m.delta)}<small>RR</small></div>${emblem(m.i >= PLACEMENTS - 1 ? m.ra : null, 26)}</div></div>`;
+  }).join('');
+
+  return tiles + `
+    <section class="card"><div class="h"><b>Rank rating</b><span>All matches</span></div><div class="chart" id="rrchart"></div></section>
+    <section class="card"><div class="h"><b>Last 16 weeks</b><span>Tap a day</span></div>${heatmap(C)}</section>
+    <section class="card"><div class="h"><b>Habits</b><span>Clean rate</span></div>${habits}</section>
+    <section class="card"><div class="h"><b>Match history</b><span>${n} played</span></div>${hist}
+      ${list.length > ui.histLimit ? `<div class="gap"></div><button class="btn ghost" data-act="more">Show more</button>` : ''}</section>`;
+}
+
+function heatmap(C) {
+  const t = today(), dow = (parseKey(t).getDay() + 6) % 7; // Monday = 0
+  const start = addDays(t, -dow - 7 * 15);
+  let cells = '';
+  for (let i = 0; i < 16 * 7; i++) {
+    const k = addDays(start, i);
+    if (k > t) { cells += `<button class="f" tabindex="-1" aria-hidden="true"></button>`; continue; }
+    const m = C.byKey[k];
+    const cls = (m ? (m.win ? 'w' : 'l') : '') + (k === t ? ' t' : '');
+    const desc = `${fmtDate(k)}: ${m ? `${m.win ? 'Victory' : 'Defeat'} ${sign(m.delta)} RR` : 'no check-in'}`;
+    cells += `<button class="${cls}" data-act="hm" data-desc="${esc(desc)}" aria-label="${esc(desc)}"></button>`;
+  }
+  return `<div class="hm-wrap"><div class="hm-days"><span>M</span><span></span><span>W</span><span></span><span>F</span><span></span><span>S</span></div><div class="hm">${cells}</div></div>
+    <div class="legend"><span><i style="background:var(--win)"></i>Victory</span><span><i style="background:var(--loss)"></i>Defeat</span><span><i style="background:var(--empty)"></i>No check-in</span></div>`;
+}
+
+function drawChart(C) {
+  const el = $('#rrchart');
+  if (!el) return;
+  const M = [{ key: null, total: 0 }, ...C.matches];
+  if (C.matches.length < 2) { el.style.minHeight = '0'; el.innerHTML = '<p class="muted small">Play at least 2 matches to see your RR graph.</p>'; return; }
+  const W = el.clientWidth || 320, H = 210, pl = 62, pr = 6, pt = 10, pb = 22;
+  const vals = M.map(p => p.total), mn = Math.min(...vals), mx = Math.max(...vals);
+  const lo = Math.floor(mn / 300) * 300, hi = Math.max(lo + 300, Math.ceil((mx + 1) / 300) * 300);
+  const n = M.length, step = (W - pl - pr) / (n - 1);
+  const x = i => pl + i * step, y = v => pt + (hi - v) * (H - pt - pb) / (hi - lo);
+  let g = '';
+  for (let v = lo; v <= hi; v += 100) {
+    const major = v % 300 === 0;
+    g += `<line x1="${major ? 0 : pl}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="${major ? '#33465a' : '#223140'}" stroke-width="1" ${major ? '' : 'stroke-dasharray="2 4"'}/>`;
+    const tier = major && v < hi ? Math.min(8, v / 300) : -1;
+    if (tier >= 0 && TIERS[tier]) {
+      const ym = (y(v) + y(Math.min(hi, v + 300))) / 2;
+      g += `<circle cx="5" cy="${ym}" r="4" fill="${TIERS[tier].c2}"/><text x="14" y="${ym + 4}" font-size="11" fill="#b5bcc2" font-family="Oswald, sans-serif" letter-spacing="1">${TIERS[tier].name.toUpperCase()}</text>`;
+    }
+  }
+  const line = M.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(p.total).toFixed(1)}`).join(' ');
+  const area = `${line} L${x(n - 1).toFixed(1)} ${H - pb} L${x(0)} ${H - pb}Z`;
+  const dots = n <= 60 ? M.slice(1).map((p, j) => `<circle cx="${x(j + 1)}" cy="${y(p.total)}" r="4" fill="${p.win ? 'var(--win)' : 'var(--loss)'}" stroke="var(--surface)" stroke-width="2"/>`).join('') : '';
+  const first = C.matches[0].key, last = C.matches[C.matches.length - 1].key;
+  el.innerHTML = `<svg width="${W}" height="${H}" role="img" aria-label="Rank rating over ${C.matches.length} matches, from 0 to ${C.total} RR">
+    <defs><linearGradient id="rrfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ece8e1" stop-opacity=".18"/><stop offset="1" stop-color="#ece8e1" stop-opacity="0"/></linearGradient></defs>
+    ${g}<path d="${area}" fill="url(#rrfill)"/>
+    <path d="${line}" fill="none" stroke="#ece8e1" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}
+    <line id="xh" y1="${pt}" y2="${H - pb}" stroke="#8a95a0" stroke-width="1" visibility="hidden"/>
+    <circle id="xd" r="6" fill="#ece8e1" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>
+    <text x="${pl}" y="${H - 5}" font-size="11" fill="#8a95a0">${esc(fmtDate(first, { month: 'short', day: 'numeric' }))}</text>
+    <text x="${W - pr}" y="${H - 5}" font-size="11" fill="#8a95a0" text-anchor="end">${esc(fmtDate(last, { month: 'short', day: 'numeric' }))}</text>
+    <rect x="0" y="0" width="${W}" height="${H}" fill="transparent" id="hit"/>
+  </svg><div class="tip" id="tip"></div>`;
+  const svg = el.querySelector('svg'), xh = el.querySelector('#xh'), xd = el.querySelector('#xd'), tip = el.querySelector('#tip');
+  const show = ev => {
+    const r = svg.getBoundingClientRect();
+    const i = Math.max(0, Math.min(n - 1, Math.round((ev.clientX - r.left - pl) / step)));
+    const p = M[i], px = x(i), py = y(p.total);
+    xh.setAttribute('x1', px); xh.setAttribute('x2', px); xh.setAttribute('visibility', 'visible');
+    xd.setAttribute('cx', px); xd.setAttribute('cy', py); xd.setAttribute('visibility', 'visible');
+    const rk = p.key && p.i >= PLACEMENTS - 1 ? rankOf(p.total).name : 'Unranked';
+    tip.innerHTML = p.key
+      ? `<b>${p.win ? 'VICTORY' : 'DEFEAT'} ${sign(p.delta)}</b> · ${esc(fmtDate(p.key))}<br>${p.total} RR · ${rk}`
+      : `<b>START</b> · 0 RR`;
+    tip.style.display = 'block';
+    const tw = tip.offsetWidth;
+    tip.style.left = Math.max(tw / 2, Math.min(W - tw / 2, px)) + 'px';
+    tip.style.top = (py < 60 ? py + 14 : py - tip.offsetHeight - 12) + 'px';
+  };
+  const hide = () => { xh.setAttribute('visibility', 'hidden'); xd.setAttribute('visibility', 'hidden'); tip.style.display = 'none'; };
+  svg.addEventListener('pointermove', show);
+  svg.addEventListener('pointerdown', show);
+  svg.addEventListener('pointerleave', hide);
+}
+
+function viewCollection(C) {
+  const got = BADGES.filter(b => C.badges[b.id]).length;
+  const grid = BADGES.map(b => {
+    const k = C.badges[b.id], on = S.profile.title === b.id;
+    return `<button class="badge ${k ? '' : 'lock'} ${on && k ? 'on' : ''}" data-act="${k ? 'equip' : 'locked'}" data-id="${b.id}"
+        aria-label="${esc(b.name)}: ${esc(b.desc)}. ${k ? 'Unlocked ' + fmtDate(k) + (on ? ', equipped as title' : ', tap to equip as title') : 'Locked'}">
+      <span class="bi">${k ? b.icon : '🔒'}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small>
+      ${k ? `<small>${fmtDate(k, { month: 'short', day: 'numeric' })}</small>` : ''}</button>`;
+  }).join('');
+  const cur = C.rank ? C.rank.idx : -1;
+  const ladder = TIERS.map((T, ti) => {
+    const from = ti === 8 ? RADIANT_AT : ti * 300;
+    const you = C.rank && C.rank.tier === ti;
+    const r = ti === 8 ? { tier: 8 } : { tier: ti, div: 3 };
+    return `<div class="lr ${you ? 'you' : ''} ${cur < ti * 3 ? 'dim' : ''}">${emblem(r, 34)}<b>${T.name}</b><small>${ti === 8 ? `${from}+ RR` : `${from}–${from + 299} RR`}</small></div>`;
+  }).reverse().join('');
+  return `<section class="card"><div class="h"><b>Badges</b><span>${got} / ${BADGES.length}</span></div>
+      <p class="muted small" style="margin-top:-4px">Tap an unlocked badge to wear it as your title.</p>
+      <div class="badges">${grid}</div></section>
+    <section class="card ladder"><div class="h"><b>The ladder</b><span>3 divisions · 100 RR each</span></div>${ladder}</section>`;
+}
+
+function healthCard() {
+  const syncs = Object.entries(S.health || {}).sort((a, b) => b[1].at - a[1].at);
+  const last = syncs[0];
+  const rules = activeMissions().map(m => {
+    const r = ruleFor(m);
+    return `<div class="srow"><span class="hic">${esc(m.icon)}</span>
+      <div class="hname"><b>${esc(m.name)}</b><small>${r ? '<span class="heart">♥</span> ' : ''}${esc(ruleText(r))}</small></div>
+      <button class="iconbtn" data-act="rule-edit" data-id="${m.id}">Target</button></div>`;
+  }).join('');
+  return `<section class="card"><div class="h"><b><span class="heart">♥</span> Apple Health</b><span>via Shortcuts</span></div>
+      <p class="muted small" style="margin-top:-4px">Apple only shares Health data through the Shortcuts app. A small shortcut reads your Health data, and missions that hit their target tick themselves off.</p>
+      <p class="small" style="margin:0 0 12px">${last ? `Last sync: <b>${esc(fmtDate(last[0]))}</b> at ${new Date(last[1].at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}` : '<span class="muted">Not synced yet.</span>'}</p>
+      <button class="btn ghost" data-act="health-setup">Set up the shortcut</button>
+      <div class="gap"></div>
+      <div class="row"><button class="btn ghost" data-act="health-run">Sync now</button><button class="btn ghost" data-act="health-paste-sheet">Paste data</button></div>
+      <div class="gap"></div>
+      <div class="h"><span>Mission targets</span></div>
+      ${rules || '<p class="muted small">Add missions to set Health targets.</p>'}
+    </section>`;
+}
+
+function viewSettings() {
+  const live = S.habits.filter(h => !h.archivedOn), arch = S.habits.filter(h => h.archivedOn);
+  const hrow = h => `<div class="srow"><span class="hic">${esc(h.icon)}</span>
+      <div class="hname"><b>${esc(h.name)}</b>${h.why ? `<small>${esc(h.why)}</small>` : ''}</div>
+      <button class="iconbtn" data-act="habit-edit" data-id="${h.id}">Edit</button></div>`;
+  return `<section class="card"><div class="h"><b>Player</b></div>
+      <div class="srow"><div class="hname"><b>${esc(S.profile.name)} <span class="muted">#${esc(S.profile.tag)}</span></b><small>Since ${fmtDate(S.profile.created || today(), { month: 'long', day: 'numeric', year: 'numeric' })}</small></div>
+      <button class="iconbtn" data-act="profile-edit">Edit</button></div></section>
+
+    <section class="card"><div class="h"><b>Bad habits</b><span>${live.length} active</span></div>
+      ${live.map(hrow).join('') || '<p class="muted small">No active habits.</p>'}
+      <div class="gap"></div><button class="btn ghost" data-act="habit-add">+ Add a habit</button>
+      ${arch.length ? `<details><summary>Archived (${arch.length})</summary>${arch.map(hrow).join('')}</details>` : ''}
+    </section>
+
+    <section class="card"><div class="h"><b>Daily missions</b><span>${activeMissions().length} active</span></div>
+      ${activeMissions().map(m => `<div class="srow"><span class="hic">${esc(m.icon)}</span><div class="hname"><b>${esc(m.name)}</b></div>
+        <button class="iconbtn" data-act="mission-remove" data-id="${m.id}">Remove</button></div>`).join('') || '<p class="muted small">No missions.</p>'}
+      <div class="gap"></div><button class="btn ghost" data-act="mission-add">+ Add a mission</button>
+    </section>
+
+    ${healthCard()}
+
+    <section class="card"><div class="h"><b>How ranking works</b></div>
+      <ul class="howto">
+        <li>Each day you check in is a <b>match</b>. Every habit clean is a <b>Victory</b>. Any relapse is a <b>Defeat</b>.</li>
+        <li>Victory: <b>+20 RR</b>, +2 for each day of your win streak (up to +10), and +2 for each extra habit kept clean (up to +6).</li>
+        <li>Defeat: <b>−20 RR</b>, −5 for each extra relapse (−30 at most), and +2 back for each habit you still held (up to +6).</li>
+        <li>Missions: <b>+3 RR</b> each, up to 4 a day. Missions with a <span class="heart">♥</span> Health target tick themselves off when you sync Apple Health.</li>
+        <li>Your first 5 matches are <b>placements</b>. Habit RR counts double and your rank stays hidden until they are done.</li>
+        <li>Each division is <b>100 RR</b>, with 3 divisions per rank. Lose at 0 RR and you drop a division. Radiant starts at <b>2400 RR</b>, about 2–3 months of clean days.</li>
+        <li>You can check in or edit any of the last 7 days. Be honest: the ladder only works if you are.</li>
+      </ul>
+    </section>
+
+    <section class="card"><div class="h"><b>Your data</b></div>
+      <p class="muted small" style="margin-top:-4px">Everything is stored on this device only. Export a backup now and then.</p>
+      <div class="row"><button class="btn ghost" data-act="export">Export backup</button><button class="btn ghost" data-act="import">Import backup</button></div>
+      <div class="gap"></div><button class="btn danger" data-act="reset">Reset everything</button>
+    </section>
+
+    <section class="card"><div class="h"><b>Install on your phone</b></div>
+      <p class="muted small" style="margin:0">iPhone: open this page in Safari, tap <b>Share</b>, then <b>Add to Home Screen</b>.<br>Android: open the Chrome menu and tap <b>Add to Home screen</b> or <b>Install app</b>.</p>
+    </section>`;
+}
+
+/* ---------- Onboarding ---------- */
+function viewOnboarding() {
+  const tag = String(Math.floor(1000 + Math.random() * 9000));
+  return `<div class="ob">
+    <div class="logo">${emblem({ tier: 7, div: 3 }, 84)}<h1>RANK<span>ED</span></h1><p>Quit bad habits · Climb the ladder</p></div>
+    <form data-submit="onboard">
+      <section class="card"><p class="step"><i>1</i>Player ID</p>
+        <div class="idrow"><input type="text" name="name" maxlength="16" placeholder="Name" required autocomplete="nickname" aria-label="Player name">
+        <em>#</em><input type="text" name="tag" maxlength="5" value="${tag}" aria-label="Tag"></div></section>
+      <section class="card"><p class="step"><i>2</i>Bad habits to quit</p>
+        <div class="chips">${HABIT_PRESETS.map((p, i) => `<label class="chip"><input type="checkbox" name="hp" value="${i}"><span>${p[0]} ${esc(p[1])}</span></label>`).join('')}</div>
+        <div class="gap"></div>
+        <label class="f"><span>Something else? (comma-separated)</span><input type="text" name="hcustom" placeholder="e.g. Skipping breakfast, Online arguments"></label>
+      </section>
+      <section class="card"><p class="step"><i>3</i>Daily missions for bonus RR</p>
+        <div class="chips">${MISSION_PRESETS.map((p, i) => `<label class="chip"><input type="checkbox" name="mp" value="${i}" ${i < 3 ? 'checked' : ''}><span>${p[0]} ${esc(p[1])}</span></label>`).join('')}</div>
+      </section>
+      <section class="card"><p class="step"><i>4</i>How it works</p>
+        <ul class="howto">
+          <li>Each day, mark every habit <b>Clean</b> or <b>Relapsed</b>, then <b>Lock in</b>.</li>
+          <li>Clean days earn RR and build win streaks. Relapses cost RR and can derank you.</li>
+          <li>Play 5 placement matches to get your rank, then climb from Iron to <b>Radiant</b>.</li>
+        </ul>
+      </section>
+      <button class="btn" type="submit">Start placements</button>
+    </form>
+  </div>`;
+}
+
+/* ---------- Render ---------- */
+function render() {
+  if (!S || !S.profile) {
+    document.body.classList.add('onboarding');
+    $('#view').innerHTML = viewOnboarding();
+    return;
+  }
+  document.body.classList.remove('onboarding');
+  const C = compute();
+  $('#top').innerHTML = topbar(C);
+  const views = { play: viewPlay, career: viewCareer, collection: viewCollection, settings: viewSettings };
+  $('#view').innerHTML = views[ui.tab](C);
+  document.querySelectorAll('nav.tabs button').forEach(b => { if (b.dataset.tab === ui.tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  if (ui.tab === 'career') drawChart(C);
+}
+
+let toastT;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ---------- Result screen ---------- */
+function showResult(before, after, k) {
+  const m = after.byKey[k];
+  if (!m) return;
+  const newBadges = BADGES.filter(b => after.badges[b.id] && !before.badges[b.id]);
+  const justPlaced = !before.placed && after.placed;
+  const rb = before.rank, ra = after.rank;
+  let banner = '';
+  if (justPlaced) banner = `<div class="banner" style="background:${TIERS[ra.tier].c1}">Rank revealed</div>`;
+  else if (rb && ra && ra.idx > rb.idx) banner = `<div class="banner" style="background:var(--win);color:var(--bg)">Promoted</div>`;
+  else if (rb && ra && ra.idx < rb.idx) banner = `<div class="banner" style="background:var(--loss);color:#fff">Demoted</div>`;
+
+  let rankBlock;
+  if (!ra) {
+    const n = after.matches.length;
+    rankBlock = `${emblem(null, 96)}<div class="rk">Placement ${n} / ${PLACEMENTS}</div>
+      <div class="pips">${Array.from({ length: PLACEMENTS }, (_, i) => `<i class="${after.matches[i] ? (after.matches[i].win ? 'w' : 'l') : ''}"></i>`).join('')}</div>`;
+  } else {
+    const T = TIERS[ra.tier];
+    const startPct = rb && rb.idx === ra.idx && ra.tier < 8 ? rb.rr : (rb && ra.idx < rb.idx ? 100 : 0);
+    const endPct = ra.tier === 8 ? 100 : ra.rr;
+    rankBlock = `${emblem(ra, 110)}<div class="rk" style="color:${T.c2}">${ra.name}</div>${banner}
+      <div class="rrline"><span>Rank rating</span><b>${ra.tier === 8 ? ra.rr : ra.rr + ' / 100'} RR</b></div>
+      <div class="rrbar"><i id="resbar" data-end="${endPct}" style="width:${startPct}%;background:linear-gradient(90deg,${T.c1},${T.c2})"></i></div>`;
+  }
+  const habitsLost = activeHabits(k).filter(h => S.days[k].h[h.id] === 'r');
+  const why = habitsLost.find(h => h.why);
+  const quote = m.win ? pick(WIN_LINES) : (why ? `Remember why you are quitting ${esc(why.name.toLowerCase())}: “${esc(why.why)}”` : pick(LOSS_LINES));
+  const color = m.win ? 'var(--win)' : 'var(--loss)';
+  const o = $('#overlay');
+  o.innerHTML = `<div class="res" style="--glow:${m.win ? 'rgba(47,211,165,.22)' : 'rgba(255,70,85,.24)'}"><div class="res-in">
+    <div class="kicker">${m.placement ? `Placement match ${m.i + 1}` : esc(fmtDate(k, { weekday: 'long', month: 'short', day: 'numeric' }))}</div>
+    <h1 style="color:${color}">${m.win ? 'Victory' : 'Defeat'}</h1>
+    <div class="delta">${sign(m.delta)} RR</div>
+    ${rankBlock}
+    <div class="parts">${m.parts.map(([l, v]) => `<div><span>${esc(l)}</span><span>${sign(v)}</span></div>`).join('')}</div>
+    ${newBadges.length ? `<div class="newb"><div class="h" style="margin:0 0 4px"><b>New badge${newBadges.length > 1 ? 's' : ''} unlocked</b></div>
+      ${newBadges.map(b => `<div><span class="bi">${b.icon}</span><span><b>${esc(b.name)}</b><br><span class="muted small">${esc(b.desc)}</span></span></div>`).join('')}</div>` : ''}
+    <p class="quote">${quote}</p>
+    <button class="btn" data-act="close-result">Continue</button>
+  </div></div>`;
+  o.classList.add('show');
+  $('#toast').classList.remove('show');
+  document.body.style.overflow = 'hidden';
+  const bar = $('#resbar');
+  if (bar) requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = bar.dataset.end + '%'; }));
+  if (navigator.vibrate) navigator.vibrate(m.win ? [30, 40, 60] : [120]);
+  o.querySelector('.btn').focus({ preventScroll: true });
+}
+
+/* ---------- Sheets ---------- */
+function openSheet(title, html) {
+  const s = $('#sheet');
+  s.setAttribute('aria-label', title);
+  s.innerHTML = `<div class="bd" data-act="close-sheet"></div><div class="panel"><h2>${esc(title)}<button data-act="close-sheet" aria-label="Close">×</button></h2>${html}</div>`;
+  s.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeSheet() { $('#sheet').classList.remove('show'); $('#sheet').innerHTML = ''; document.body.style.overflow = ''; }
+
+function iconPicker(cur) {
+  const list = ICONS.includes(cur) || !cur ? ICONS : [cur, ...ICONS];
+  return `<div class="icons chips">${list.map((ic, i) => `<label class="chip"><input type="radio" name="icon" value="${esc(ic)}" ${ic === cur || (!cur && i === 0) ? 'checked' : ''} aria-label="${esc(ic)}"><span>${esc(ic)}</span></label>`).join('')}</div>`;
+}
+
+function habitSheet(h) {
+  const taken = new Set(S.habits.map(x => x.name.toLowerCase()));
+  const quick = HABIT_PRESETS.filter(p => !taken.has(p[1].toLowerCase()));
+  openSheet(h ? 'Edit habit' : 'Add a habit', `
+    ${!h && quick.length ? `<label class="f"><span>Quick add</span></label><div class="chips">${quick.map(p => `<button class="chip" type="button" data-act="quick-habit" data-icon="${esc(p[0])}" data-name="${esc(p[1])}"><span>${p[0]} ${esc(p[1])}</span></button>`).join('')}</div><div class="gap"></div><div class="h"><span>Or make your own</span></div>` : ''}
+    <form data-submit="habit">
+      <input type="hidden" name="id" value="${h ? h.id : ''}">
+      <label class="f"><span>Habit to quit</span><input type="text" name="name" maxlength="40" required value="${esc(h?.name || '')}" placeholder="e.g. Doomscrolling"></label>
+      <label class="f"><span>Why are you quitting? (shown when you relapse)</span><input type="text" name="why" maxlength="90" value="${esc(h?.why || '')}" placeholder="e.g. I want my evenings back"></label>
+      <label class="f"><span>Icon</span></label>${iconPicker(h?.icon)}
+      <div class="gap"></div><button class="btn" type="submit">${h ? 'Save' : 'Add habit'}</button>
+    </form>
+    ${h ? `<div class="gap"></div>
+      ${h.archivedOn ? `<button class="btn ghost" data-act="habit-restore" data-id="${h.id}">Restore habit</button>`
+        : `<button class="btn ghost" data-act="habit-archive" data-id="${h.id}">Archive (stop tracking, keep history)</button>`}
+      <div class="gap"></div><button class="btn danger" data-act="habit-delete" data-id="${h.id}">Delete habit and its history</button>` : ''}`);
+}
+
+function missionSheet() {
+  const taken = new Set(activeMissions().map(x => x.name.toLowerCase()));
+  const quick = MISSION_PRESETS.filter(p => !taken.has(p[1].toLowerCase()));
+  openSheet('Add a mission', `
+    ${quick.length ? `<label class="f"><span>Quick add</span></label><div class="chips">${quick.map(p => `<button class="chip" type="button" data-act="quick-mission" data-icon="${esc(p[0])}" data-name="${esc(p[1])}"><span>${p[0]} ${esc(p[1])}</span></button>`).join('')}</div><div class="gap"></div><div class="h"><span>Or make your own</span></div>` : ''}
+    <form data-submit="mission">
+      <label class="f"><span>Mission</span><input type="text" name="name" maxlength="40" required placeholder="e.g. Stretch for 5 minutes"></label>
+      <label class="f"><span>Icon (emoji)</span><input type="text" name="icon" maxlength="4" value="✅"></label>
+      <button class="btn" type="submit">Add mission</button>
+    </form>`);
+}
+
+function profileSheet() {
+  openSheet('Player ID', `<form data-submit="profile">
+    <div class="idrow"><input type="text" name="name" maxlength="16" required value="${esc(S.profile.name)}" aria-label="Player name">
+    <em>#</em><input type="text" name="tag" maxlength="5" value="${esc(S.profile.tag)}" aria-label="Tag"></div>
+    <div class="gap"></div><button class="btn" type="submit">Save</button></form>`);
+}
+
+function healthSetupSheet() {
+  const here = location.href.split('#')[0];
+  openSheet('Apple Health setup', `
+    <p class="muted small" style="margin-top:0">You build this shortcut once, in about 5 minutes. Skip any metric you don't use.</p>
+    <ol class="recipe">
+      <li>Open <b>Shortcuts</b>, tap <b>+</b>, and name the shortcut exactly <b>${HEALTH_SHORTCUT}</b>.</li>
+      <li>Add <b>Find Health Samples</b>. Set Type to <b>Steps</b> and Start Date to <b>is today</b>. Then add <b>Calculate Statistics</b> and set it to <b>Sum</b>.</li>
+      <li>Repeat step 2 for <b>Exercise Minutes</b>, <b>Mindful Minutes</b> and <b>Water</b>.</li>
+      <li>Workouts: <b>Find Health Samples</b> with Type <b>Workouts</b> and Start Date <b>is today</b>, then <b>Count</b>.</li>
+      <li>Bedtime: <b>Find Health Samples</b> with Type <b>Sleep</b>, Start Date <b>is in the last 1 days</b>, sorted by Start Date, <b>Oldest First</b>, Limit <b>1</b>. Then <b>Get Details of Health Sample → Start Date</b>, then <b>Format Date</b> with a Custom format of <code>HH:mm</code>.</li>
+      <li>Add a <b>Text</b> action and paste this in:
+        <span class="tmpl">${esc(HEALTH_TEMPLATE)}</span>
+        <button class="btn ghost sm" type="button" data-act="copy-template">Copy template</button><br>
+        Replace each CAPITAL word with the matching result: tap the word, then choose the variable from the step above. For DATE, insert <b>Current Date</b> and set its format to Custom <code>yyyy-MM-dd</code>. Delete any <code>&amp;name=WORD</code> pieces you skipped.</li>
+      <li>Add <b>Copy to Clipboard</b> at the end.</li>
+    </ol>
+    <div class="h"><span>Using it</span></div>
+    <p class="small" style="color:var(--ink-2);margin-top:0">Tap <b>Sync Apple Health</b> on the Play tab. The shortcut runs and copies your data; switch back to Ranked and tap <b>Paste</b>. The first time, iOS asks which Health data the shortcut may read.</p>
+    <p class="small" style="color:var(--ink-2)"><b>Daily automation:</b> in Shortcuts, go to Automation → <b>+</b> → Time of Day (e.g. 9:30 PM) → Run Immediately → ${HEALTH_SHORTCUT}. Later, open Ranked and tap <b>Paste data</b> in Settings.</p>
+    <p class="small" style="color:var(--ink-2)"><b>Using Ranked in Safari</b> instead of from the Home Screen? Replace the last step with <b>Open URLs</b> and set the URL to <code>${esc(here)}#</code> followed by the Text, and the data is imported automatically. (Home Screen apps keep separate storage from Safari, so this only works in Safari.)</p>
+    <button class="btn" data-act="close-sheet">Done</button>`);
+}
+
+function healthPasteSheet(welcome) {
+  openSheet(welcome ? 'Welcome back' : 'Paste Health data', `
+    <p class="muted small" style="margin-top:0">${welcome ? 'If the shortcut finished, your Health data is on the clipboard.' : 'Run the shortcut first, then paste its result here.'}</p>
+    <button class="btn" data-act="health-paste"><span class="heart" style="color:#fff">♥</span> Paste from clipboard</button>
+    <div class="gap"></div>
+    <form data-submit="healthtext">
+      <label class="f"><span>Or paste it here by hand</span><textarea name="text" placeholder="${esc(HEALTH_PREFIX)}date=…"></textarea></label>
+      <button class="btn ghost" type="submit">Import</button>
+    </form>`);
+}
+
+function healthResultSheet(p, hits, diff, locked) {
+  const mets = Object.keys(METRICS).filter(k => p.metrics[k] != null)
+    .map(k => `<div><b>${esc(metricText(k, p.metrics[k]))}</b><span class="muted small">${esc(METRICS[k].label)}</span></div>`).join('');
+  openSheet('Health synced', `
+    <p class="muted small" style="margin-top:0">${esc(fmtDate(p.date, { weekday: 'long', month: 'short', day: 'numeric' }))}</p>
+    <div class="hmet">${mets}</div>
+    ${hits.length ? `<div class="h"><span>Missions completed</span><span>${locked ? `${sign(diff)} RR` : `+${Math.min(hits.length, MISSION_CAP) * MISSION_RR} RR at lock-in`}</span></div>
+      ${hits.map(m => `<div class="srow"><span class="hic">${esc(m.icon)}</span><div class="hname"><b>${esc(m.name)}</b><small class="muted">${esc(ruleText(ruleFor(m)))}</small></div><span style="color:var(--win)">✓</span></div>`).join('')}`
+      : `<p class="small" style="color:var(--ink-2)">No new missions hit their target yet. Sync again later in the day.</p>`}
+    <div class="gap"></div><button class="btn" data-act="close-sheet">Nice</button>`);
+}
+
+function ruleSheet(m) {
+  const r = ruleFor(m);
+  openSheet('Health target', `
+    <p class="muted small" style="margin-top:0">${esc(m.icon)} ${esc(m.name)}</p>
+    <form data-submit="rule">
+      <input type="hidden" name="id" value="${m.id}">
+      <label class="f"><span>Complete this mission when</span>
+        <select name="metric">
+          <option value="">Never (tick it off by hand)</option>
+          ${Object.entries(METRICS).map(([k, M]) => `<option value="${k}" ${r && r.metric === k ? 'selected' : ''}>${esc(M.label)}${M.time ? ' is at or before…' : ' reaches…'}</option>`).join('')}
+        </select></label>
+      <label class="f"><span>Target (a number, or a time like 23:00 for bedtime)</span>
+        <input type="text" name="value" inputmode="decimal" value="${r ? esc(String(r.value)) : ''}" placeholder="e.g. 10"></label>
+      <p class="muted small">Water uses whatever unit your Health app shows: 2000 for mL, or 64 for fl oz.</p>
+      <button class="btn" type="submit">Save target</button>
+    </form>`);
+}
+
+/* ---------- Actions ---------- */
+const ACT = {
+  tab(el) { ui.tab = el.dataset.tab; render(); window.scrollTo(0, 0); },
+  day(el) { ui.day = el.dataset.day; render(); },
+  mark(el) {
+    const d = dayRec(ui.day);
+    if (d.locked) return;
+    const id = el.dataset.id, v = el.dataset.v;
+    if (d.h[id] === v) delete d.h[id]; else d.h[id] = v;
+    save(); render();
+  },
+  mission(el) {
+    const d = dayRec(ui.day), id = el.dataset.id;
+    const before = d.locked ? compute().total : null;
+    d.m = d.m || [];
+    d.m = d.m.includes(id) ? d.m.filter(x => x !== id) : [...d.m, id];
+    save();
+    if (before !== null) {
+      const diff = compute().total - before;
+      toast(diff ? `${sign(diff)} RR` : `Mission saved (daily cap is ${MISSION_CAP})`);
+    }
+    render();
+  },
+  lockin() {
+    const k = ui.day, d = dayRec(k);
+    if (activeHabits(k).some(h => !d.h[h.id])) return;
+    const before = compute();
+    d.locked = true; d.lockedAt = Date.now();
+    save();
+    const after = compute();
+    render();
+    showResult(before, after, k);
+  },
+  unlock() {
+    const d = dayRec(ui.day);
+    d.locked = false; save(); render();
+    toast('Match reopened. Lock in again when you are done.');
+  },
+  'close-result'() { $('#overlay').classList.remove('show'); $('#overlay').innerHTML = ''; document.body.style.overflow = ''; },
+  'close-sheet'() { closeSheet(); },
+  more() { ui.histLimit += 30; render(); },
+  hm(el) { toast(el.dataset.desc); },
+  equip(el) {
+    S.profile.title = S.profile.title === el.dataset.id ? null : el.dataset.id;
+    save(); render();
+    toast(S.profile.title ? 'Title equipped' : 'Title removed');
+  },
+  locked(el) { const b = BADGES.find(x => x.id === el.dataset.id); toast(`Locked: ${b.desc}`); },
+  'habit-add'() { habitSheet(null); },
+  'habit-edit'(el) { habitSheet(S.habits.find(h => h.id === el.dataset.id)); },
+  'quick-habit'(el) { addHabit(el.dataset.name, el.dataset.icon, ''); closeSheet(); render(); toast(`${el.dataset.name} added`); },
+  'habit-archive'(el) {
+    const h = S.habits.find(x => x.id === el.dataset.id);
+    h.archivedOn = addDays(today(), 1);
+    save(); closeSheet(); render(); toast('Archived. Its history still counts.');
+  },
+  'habit-restore'(el) {
+    const h = S.habits.find(x => x.id === el.dataset.id);
+    h.archivedOn = null; save(); closeSheet(); render(); toast('Habit restored');
+  },
+  'habit-delete'(el) {
+    const h = S.habits.find(x => x.id === el.dataset.id);
+    if (!confirm(`Delete “${h.name}” and all its check-ins? Your RR will be recalculated without it.`)) return;
+    S.habits = S.habits.filter(x => x.id !== h.id);
+    for (const d of Object.values(S.days)) delete d.h[h.id];
+    save(); closeSheet(); render(); toast('Habit deleted');
+  },
+  'mission-add'() { missionSheet(); },
+  'quick-mission'(el) { addMission(el.dataset.name, el.dataset.icon); closeSheet(); render(); toast('Mission added'); },
+  'mission-remove'(el) {
+    const m = S.missions.find(x => x.id === el.dataset.id);
+    m.archived = true; save(); render(); toast('Mission removed. Past RR from it is kept.');
+  },
+  'profile-edit'() { profileSheet(); },
+  'health-run'() { runHealthShortcut(); },
+  'health-setup'() { healthSetupSheet(); },
+  'health-paste-sheet'() { healthPasteSheet(false); },
+  async 'health-paste'() {
+    let text = '';
+    try { text = await navigator.clipboard.readText(); }
+    catch (e) { toast('Clipboard access was blocked. Paste into the box instead.'); return; }
+    handleHealthText(text);
+  },
+  async 'copy-template'() {
+    try { await navigator.clipboard.writeText(HEALTH_TEMPLATE); toast('Template copied'); }
+    catch (e) { toast('Copy failed. Press and hold the template to copy it.'); }
+  },
+  'rule-edit'(el) { ruleSheet(S.missions.find(m => m.id === el.dataset.id)); },
+  export() {
+    const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ranked-backup-${today()}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  },
+  import() { $('#importFile').click(); },
+  reset() {
+    if (!confirm('Reset everything? This deletes your rank, history, habits and badges on this device.')) return;
+    S = null;
+    try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
+    ui.tab = 'play'; render(); window.scrollTo(0, 0);
+  },
+};
+
+function addHabit(name, icon, why) {
+  S.habits.push({ id: uid(), name: name.trim(), icon: icon || '🚫', why: (why || '').trim(), start: today(), archivedOn: null });
+  save();
+}
+function handleHealthText(text) {
+  const p = parseHealth(text);
+  if (!p) { toast(`No Health data found. Run the “${HEALTH_SHORTCUT}” shortcut first.`); return; }
+  clearHealthPending();
+  closeSheet();
+  applyHealth(p);
+}
+
+function addMission(name, icon) {
+  const existing = S.missions.find(m => m.archived && m.name.toLowerCase() === name.trim().toLowerCase());
+  if (existing) { existing.archived = false; existing.icon = icon || existing.icon; }
+  else S.missions.push({ id: uid(), name: name.trim(), icon: icon || '✅', archived: false });
+  save();
+}
+
+const SUBMIT = {
+  onboard(fd) {
+    const name = String(fd.get('name') || '').trim();
+    const tag = String(fd.get('tag') || '').trim().replace(/^#/, '') || '0001';
+    const picks = fd.getAll('hp').map(i => HABIT_PRESETS[+i]);
+    const custom = String(fd.get('hcustom') || '').split(',').map(s => s.trim()).filter(Boolean).map(n => ['🚫', n]);
+    const habits = [...picks, ...custom];
+    if (!name) return toast('Enter a player name');
+    if (!habits.length) return toast('Pick at least one habit to quit');
+    S = { v: 1, profile: { name, tag, title: null, created: today() }, habits: [], missions: [], days: {} };
+    habits.forEach(([ic, n]) => addHabit(n, ic, ''));
+    fd.getAll('mp').forEach(i => addMission(MISSION_PRESETS[+i][1], MISSION_PRESETS[+i][0]));
+    save();
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    ui.tab = 'play'; ui.day = today();
+    render(); window.scrollTo(0, 0);
+    toast('Welcome to the ladder. Play your first placement match.');
+  },
+  habit(fd) {
+    const id = fd.get('id'), name = String(fd.get('name') || '').trim(), why = String(fd.get('why') || '').trim(), icon = fd.get('icon');
+    if (!name) return;
+    if (id) { Object.assign(S.habits.find(h => h.id === id), { name, why, icon }); save(); toast('Saved'); }
+    else { addHabit(name, icon, why); toast(`${name} added`); }
+    closeSheet(); render();
+  },
+  mission(fd) {
+    const name = String(fd.get('name') || '').trim();
+    if (!name) return;
+    addMission(name, String(fd.get('icon') || '').trim());
+    closeSheet(); render(); toast('Mission added');
+  },
+  healthtext(fd) { handleHealthText(String(fd.get('text') || '')); },
+  rule(fd) {
+    const m = S.missions.find(x => x.id === fd.get('id'));
+    const metric = String(fd.get('metric') || ''), raw = String(fd.get('value') || '').trim();
+    if (!metric) { m.health = null; }
+    else if (METRICS[metric].time) {
+      const t = parseTime(raw);
+      if (!t) return toast('Enter a time like 23:00');
+      m.health = { metric, value: t };
+    } else {
+      const n = parseNum(raw);
+      if (!n || n <= 0) return toast('Enter a number above 0');
+      m.health = { metric, value: n };
+    }
+    save(); closeSheet(); render(); toast('Target saved');
+  },
+  profile(fd) {
+    S.profile.name = String(fd.get('name') || '').trim() || S.profile.name;
+    S.profile.tag = String(fd.get('tag') || '').trim().replace(/^#/, '') || S.profile.tag;
+    save(); closeSheet(); render();
+  },
+};
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.disabled) return;
+  const fn = ACT[el.dataset.act];
+  if (fn) { e.preventDefault(); fn(el, e); }
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest('form[data-submit]');
+  if (!f) return;
+  e.preventDefault();
+  SUBMIT[f.dataset.submit]?.(new FormData(f), f);
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if ($('#sheet').classList.contains('show')) closeSheet();
+  else if ($('#overlay').classList.contains('show')) ACT['close-result']();
+});
+$('#importFile').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const data = normalize(JSON.parse(await file.text()));
+    if (!data || !data.profile || !data.profile.name) throw new Error('bad');
+    if (!confirm('Replace everything on this device with this backup?')) return;
+    S = data; save(); ui.tab = 'play'; render(); toast('Backup imported');
+  } catch (err) { toast('That file is not a Ranked backup'); }
+});
+
+// Re-render when the app comes back to the foreground (the date may have changed).
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden || !S || !S.profile) return;
+  render();
+  if (healthPending()) { clearHealthPending(); healthPasteSheet(true); }
+});
+// Safari users can have the shortcut open this page with the data after the #.
+function importFromHash() {
+  if (!location.hash.includes(encodeURIComponent(HEALTH_PREFIX)) && !location.hash.includes(HEALTH_PREFIX)) return;
+  const p = parseHealth(location.hash.slice(1));
+  history.replaceState(null, '', location.pathname + location.search);
+  if (!S || !S.profile) { toast('Finish setting up Ranked, then sync Health again.'); return; }
+  if (p) applyHealth(p); else toast('That link had no Health data in it.');
+}
+window.addEventListener('hashchange', importFromHash);
+let lastW = window.innerWidth;
+window.addEventListener('resize', () => {
+  if (window.innerWidth === lastW) return;
+  lastW = window.innerWidth;
+  if (ui.tab === 'career' && S && S.profile) drawChart(compute());
+});
+
+render();
+importFromHash();
+
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
